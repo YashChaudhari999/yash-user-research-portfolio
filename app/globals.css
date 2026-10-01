@@ -16,8 +16,100 @@
 .connect{padding:120px 7vw;display:grid;grid-template-columns:1.2fr .8fr;gap:8vw;align-items:end}.connect h2{font-size:clamp(48px,5.4vw,80px);line-height:.97;letter-spacing:-.05em;margin:0}.connect p:last-child{max-width:650px;color:#706b63;line-height:1.7}.connect-links{border-top:1px solid var(--line)}.connect-links a{display:flex;justify-content:space-between;padding:19px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}.connect-links b{font-weight:400}
 footer{border-top:1px solid var(--line);padding:24px 7vw;display:flex;justify-content:space-between;gap:20px;font:10px "DM Mono";color:#7b766e}
 .modal-backdrop{position:fixed;inset:0;background:#141414bf;z-index:100;display:grid;place-items:center;padding:25px}.modal{max-width:1050px;max-height:92vh;background:#fffdf8;border-radius:18px;overflow:auto;position:relative}.modal-close{position:absolute;right:13px;top:13px;width:37px;height:37px;border:0;border-radius:50%;background:#fff;font-size:24px;z-index:2}.modal-image{background:#ece9e2}.modal-image img{display:block;width:100%;max-height:70vh;object-fit:contain}.modal-caption{padding:22px}.modal-caption h3{font-size:27px;margin:12px 0 6px}.modal-caption p{color:#706b63;line-height:1.6;margin:0}
-@media(max-width:900px){.nav nav a:not(.nav-cta){display:none}.hero,.intro-section,.section-heading,.platform-section,.journey,.principles,.connect{grid-template-columns:1fr}.hero{padding-top:65px}.hero-profile{height:500px}.numbers{grid-template-columns:1fr 1fr}.numbers div:nth-child(2){border-right:0}.evidence-card,.evidence-card:nth-child(n){grid-column:span 12}.evidence-card .evidence-image img,.evidence-card:nth-child(n) .evidence-image img{height:310px}.method-grid{grid-template-columns:1fr 1fr}.platform-section,.journey,.principles,.connect{gap:50px}}
-@media(max-width:560px){.nav{padding:0 20px}.brand span:last-child{display:none}.hero,.intro-section,.evidence-section,.platform-section,.journey,.methods,.principles,.connect{padding-left:20px;padding-right:20px}.hero h1{font-size:78px}.hero h2{font-size:17px}.hero-lede{font-size:16px}.hero-profile{transform:scale(.83);margin:-30px -30px -10px}.numbers{grid-template-columns:1fr}.numbers div{border-right:0!important;border-bottom:1px solid var(--line)}.numbers div:last-child{border-bottom:0}.intro-section{padding-top:85px;padding-bottom:85px}.method-grid{grid-template-columns:1fr}.timeline-item{grid-template-columns:70px 1fr}.platform-row{grid-template-columns:35px 1fr 20px}.platform-row p{grid-column:2}.platform-row h3{font-size:20px}.signature{padding:100px 20px}.connect{padding-top:90px;padding-bottom:90px}footer{padding:22px 20px;flex-direction:column}.modal-backdrop{padding:8px}}
+/* ── Tablet (≤900px) ──────────────────────────────────────── */
+@media(max-width:900px){
+  .nav nav a:not(.nav-cta){display:none}
+  .hero,.intro-section,.section-heading,.platform-section,.journey,.principles,.connect{grid-template-columns:1fr}
+  .hero{padding-top:65px;min-height:auto}
+  .hero-profile{height:480px}
+  .floating-note{display:none}
+  .numbers{grid-template-columns:1fr 1fr}
+  .numbers div:nth-child(2){border-right:0}
+  .evidence-card,.evidence-card:nth-child(n){grid-column:span 12}
+  .evidence-card .evidence-image img,.evidence-card:nth-child(n) .evidence-image img{height:260px}
+  .method-grid{grid-template-columns:1fr 1fr}
+  .platform-section,.journey,.principles,.connect{gap:40px}
+  .intro-section{padding:80px 7vw}
+  .evidence-section{padding:80px 7vw}
+  .platform-section{padding:80px 7vw}
+  .journey{padding:80px 7vw}
+  .methods{padding:80px 7vw}
+  .principles{padding:80px 7vw}
+  .connect{padding:80px 7vw}
+  .signature{padding:90px 7vw}
+}
+
+/* ── Mobile (≤560px) ──────────────────────────────────────── */
+@media(max-width:560px){
+  .nav{padding:0 20px}
+  .brand span:last-child{display:none}
+
+  /* Sections — consistent 20px side padding */
+  .hero,.intro-section,.evidence-section,.platform-section,.journey,.methods,.principles,.connect{padding-left:20px;padding-right:20px}
+  .intro-section{padding-top:65px;padding-bottom:65px}
+  .evidence-section{padding-top:65px;padding-bottom:65px}
+  .platform-section{padding-top:65px;padding-bottom:65px}
+  .journey{padding-top:65px;padding-bottom:65px}
+  .methods{padding-top:65px;padding-bottom:65px}
+  .principles{padding-top:65px;padding-bottom:65px}
+  .connect{padding-top:65px;padding-bottom:65px}
+
+  /* Hero */
+  .hero{padding-top:50px;padding-bottom:60px;min-height:auto;gap:40px}
+  .hero h1{font-size:clamp(58px,16vw,80px)}
+  .hero h2{font-size:16px}
+  .hero-lede{font-size:15px;margin-top:18px}
+  .hero-thesis{font-size:14px}
+  .hero-actions{gap:14px;margin-top:26px}
+  .button{padding:13px 16px;font-size:12px}
+  .socials{margin-top:24px}
+
+  /* Hero profile — hide on very small, show as flat card */
+  .hero-profile{height:auto;transform:none;margin:0}
+  .profile-ring{display:none}
+  .floating-note{display:none}
+  .profile-card{width:100%;max-width:100%;transform:none;min-height:auto;border-radius:18px}
+  .profile-name{font-size:42px;margin-top:50px}
+
+  /* Numbers */
+  .numbers{grid-template-columns:1fr 1fr}
+  .numbers div{padding:22px 20px;border-right:0;border-bottom:1px solid var(--line)}
+  .numbers div:nth-child(2n){border-left:1px solid var(--line)}
+  .numbers div:last-child,.numbers div:nth-last-child(2):nth-child(odd){border-bottom:0}
+  .numbers strong{font-size:38px}
+
+  /* Timeline */
+  .timeline-item{grid-template-columns:60px 1fr;gap:16px}
+  .timeline-item h3{font-size:20px}
+
+  /* Platform rows */
+  .platform-row{grid-template-columns:32px 1fr 20px;gap:12px}
+  .platform-row p{grid-column:2}
+  .platform-row h3{font-size:19px}
+
+  /* Methods */
+  .method-grid{grid-template-columns:1fr}
+  .method-card{min-height:auto}
+
+  /* Signature */
+  .signature{padding:75px 20px}
+  .signature-mark{font-size:70px}
+
+  /* Footer */
+  footer{padding:22px 20px;flex-direction:column;gap:10px}
+
+  /* Modal — full screen on mobile */
+  .modal-backdrop{padding:0}
+  .modal{max-width:100%;max-height:100vh;border-radius:0}
+  .modal-image img{max-height:55vh}
+  .modal-caption{padding:16px}
+  .modal-caption h3{font-size:20px}
+  .modal-close{right:10px;top:10px;width:34px;height:34px;font-size:20px}
+
+  /* Filter pills — scrollable row */
+  .filter-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .filter-row::-webkit-scrollbar{display:none}
+}
 
 /* ── Custom Scrollbar ─────────────────────────────────────── */
 /* Firefox */
