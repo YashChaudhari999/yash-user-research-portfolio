@@ -186,6 +186,10 @@ export default function Home() {
   const [activeSection, setActive]= useState("top");
   const [copied, setCopied]       = useState(false);
   const liveRef = useRef<HTMLParagraphElement>(null);
+  const filterRowRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   /** F8 — count per filter tab */
   const countFor = (f: string) =>
@@ -196,24 +200,29 @@ export default function Home() {
     [filter]
   );
 
+  const currentIndex = useMemo(() => {
+    if (!selected) return -1;
+    return visible.findIndex(e => e.src === selected.src);
+  }, [selected, visible]);
+
   /** F8 — announce filter result to screen readers */
   useEffect(() => {
     if (liveRef.current) {
       liveRef.current.textContent =
-        `Showing ${visible.length} of ${evidence.length} evidence cards`;
+        `Showing ${visible.length} of ${evidence.length} evidence cards${filter !== "All" ? ` for ${filter}` : ""}`;
     }
-  }, [visible.length]);
+  }, [visible.length, filter]);
 
   /** F12 — active section tracking for nav highlight */
   useEffect(() => {
-    const ids = ["top", "evidence", "journey", "approach", "about", "contact"];
+    const ids = ["top", "about", "evidence", "journey", "approach", "contact"];
     const observers: IntersectionObserver[] = [];
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       const obs = new IntersectionObserver(
         ([entry]) => { if (entry.isIntersecting) setActive(id); },
-        { rootMargin: "-40% 0px -55% 0px" }
+        { rootMargin: "-30% 0px -60% 0px" }
       );
       obs.observe(el);
       observers.push(obs);
@@ -221,18 +230,124 @@ export default function Home() {
     return () => observers.forEach(o => o.disconnect());
   }, []);
 
-  /** F12 — close modal on Escape */
+  /** Open modal and record triggering element to restore focus on close (HCI: Focus Preservation) */
+  const openModal = (item: Evidence) => {
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    setSelected(item);
+  };
+
+  /** Close modal and return focus to trigger button */
+  const closeModal = () => {
+    setSelected(null);
+    setTimeout(() => {
+      triggerRef.current?.focus();
+    }, 50);
+  };
+
+  /** Modal sequential navigation: previous study */
+  const handlePrevEvidence = () => {
+    if (visible.length === 0) return;
+    if (currentIndex > 0) {
+      setSelected(visible[currentIndex - 1]);
+    } else {
+      setSelected(visible[visible.length - 1]);
+    }
+  };
+
+  /** Modal sequential navigation: next study */
+  const handleNextEvidence = () => {
+    if (visible.length === 0) return;
+    if (currentIndex >= 0 && currentIndex < visible.length - 1) {
+      setSelected(visible[currentIndex + 1]);
+    } else {
+      setSelected(visible[0]);
+    }
+  };
+
+  /** Body scroll lock & focus close button when modal is open (WAI-ARIA Dialog) */
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setSelected(null); };
+    if (selected) {
+      document.body.style.overflow = "hidden";
+      setTimeout(() => {
+        closeBtnRef.current?.focus();
+      }, 50);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selected]);
+
+  /** Global keyboard navigation for modal (Escape, ArrowLeft, ArrowRight) */
+  useEffect(() => {
+    if (!selected) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handlePrevEvidence();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handleNextEvidence();
+      }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [selected, currentIndex, visible]);
 
-  /** F2 — copy email to clipboard */
+  /** Focus trap for modal (Tab / Shift+Tab cycling) */
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab" || !modalRef.current) return;
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  };
+
+  /** Arrow key navigation across filter buttons (WAI-ARIA toolbar / roving tabindex) */
+  const handleFilterKeyDown = (e: React.KeyboardEvent, currentIdx: number) => {
+    let nextIdx = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextIdx = (currentIdx + 1) % filterOptions.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextIdx = (currentIdx - 1 + filterOptions.length) % filterOptions.length;
+    } else if (e.key === "Home") {
+      nextIdx = 0;
+    } else if (e.key === "End") {
+      nextIdx = filterOptions.length - 1;
+    }
+
+    if (nextIdx !== -1) {
+      e.preventDefault();
+      const buttons = filterRowRef.current?.querySelectorAll<HTMLButtonElement>("button.filter");
+      if (buttons && buttons[nextIdx]) {
+        buttons[nextIdx].focus();
+        setFilter(filterOptions[nextIdx]);
+      }
+    }
+  };
+
+  /** F2 — copy email to clipboard with accessible confirmation */
   const copyEmail = () => {
     navigator.clipboard.writeText("yashchaudhari500@gmail.com").then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2500);
     });
   };
 
@@ -263,23 +378,29 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <>
+      {/* WCAG 2.4.1 — Skip link for keyboard and screen reader accessibility */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+
       {/* ── Navigation ─────────────────────────────────────────── */}
       <header className="nav">
-        <a href="#top" className="brand">
+        <a href="#top" className="brand" aria-label="Yash Chaudhari home">
           {/* F6 — logo is decorative; adjacent text already names the site */}
-          <img src="/YC.png" alt="" role="presentation" className="brand-mark" />
+          <img src="/YC.png" alt="" role="presentation" className="brand-mark" width={34} height={34} />
           <span>Yash Chaudhari</span>
         </a>
         <nav aria-label="Site sections">
+          {/* Spatial order matches the reading order of the page: About -> Evidence -> Journey -> Approach -> Connect */}
+          {navLink("#about",    "About")}
           {navLink("#evidence", "Evidence")}
           {navLink("#journey",  "Journey")}
           {navLink("#approach", "Approach")}
-          {navLink("#about",    "About")}
-          {/* F10 — no ↗ on in-page anchor */}
           <a href="#contact" className="nav-cta">Connect</a>
         </nav>
       </header>
+
+      {/* ── Main landmark ──────────────────────────────────────── */}
+      <main id="main-content">
 
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="hero" id="top">
@@ -327,16 +448,10 @@ export default function Home() {
             <div className="profile-name">Yash<br /><em>Chaudhari</em></div>
             <div className="profile-caption">Curious user. Detailed observer. Consistent participant.</div>
             <div className="profile-stat">
-              {/* F1 — "3+" removed; stat now shows start year for clarity */}
               <div><strong>Since</strong><span>2024</span></div>
-              <div><strong>4</strong><span>dscout missions*</span></div>
-              <div><strong>28</strong><span>dscout entries*</span></div>
+              <div><strong>4</strong><span>missions</span></div>
+              <div><strong>28</strong><span>diary entries</span></div>
             </div>
-            {/* F1 — footnote clarifies the 4 missions vs 7 dscout cards */}
-            <p className="footnote">
-              *From the dscout profile screenshot. 3 additional express studies are
-              shown separately in the evidence grid.
-            </p>
           </div>
           <div className="floating-note note-one">REAL-WORLD<br /><b>PRODUCT FEEDBACK</b></div>
           <div className="floating-note note-two">UX<br /><b>OBSERVATION</b></div>
@@ -376,21 +491,27 @@ export default function Home() {
             <h2>Don&apos;t take my word for it.<br /><em>See the evidence.</em></h2>
           </div>
           <p>
-            Screenshots are the backbone of this portfolio. They show actual study
-            records, missions, participant dashboards and compensation details.
-            Confidential details have been cropped or blurred where present.
+            Real study records, usability missions, and participant dashboards
+            across moderated and unmoderated research sessions.
           </p>
         </div>
 
         {/* F8 — polite live region announces filter result count to screen readers */}
         <p ref={liveRef} className="sr-only" aria-live="polite" aria-atomic="true"></p>
 
-        {/* F8 — filter buttons use aria-pressed; F4 — counts shown per tab */}
-        <div className="filter-row" role="group" aria-label="Filter evidence by platform">
-          {filterOptions.map(f => (
+        {/* F8 — filter toolbar with keyboard arrow navigation & counts per tab */}
+        <div
+          ref={filterRowRef}
+          className="filter-row"
+          role="toolbar"
+          aria-label="Filter evidence by platform"
+        >
+          {filterOptions.map((f, idx) => (
             <button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
+              onKeyDown={e => handleFilterKeyDown(e, idx)}
               className={filter === f ? "filter active" : "filter"}
               aria-pressed={filter === f}
             >
@@ -402,11 +523,12 @@ export default function Home() {
 
         <div className="evidence-grid">
           {visible.map((item, i) => (
-            /* F6 — unique aria-label on every card button */
+            /* F6 — unique aria-label on every card button; openModal records trigger focus */
             <button
               key={item.src}
+              type="button"
               className={`evidence-card card-${i % 4}`}
-              onClick={() => setSelected(item)}
+              onClick={() => openModal(item)}
               aria-label={item.openLabel}
             >
               <div className="evidence-image">
@@ -439,11 +561,10 @@ export default function Home() {
         <div className="platform-heading">
           <p className="eyebrow">02 · RESEARCH ECOSYSTEM</p>
           <h2>Seven platforms.<br /><em>One research habit.</em></h2>
-          {/* F4 — explains platforms without evidence cards */}
           <p>
             I&apos;ve used different research environments because each one asks a
-            participant to behave differently. Platforms marked &ldquo;no screenshot on
-            file&rdquo; are ones I&apos;ve used but don&apos;t have a shareable screenshot for.
+            participant to behave differently. That variety has helped me become
+            comfortable with both quick feedback and deeper study formats.
           </p>
         </div>
         <div className="platform-list">
@@ -573,10 +694,20 @@ export default function Home() {
             >
               ✉ Invite me to a study
             </a>
-            <button className="email-copy" onClick={copyEmail} aria-label="Copy email address to clipboard">
+            <button
+              type="button"
+              className="email-copy"
+              onClick={copyEmail}
+              aria-label={copied ? "Email address copied to clipboard" : "Copy email address to clipboard: yashchaudhari500@gmail.com"}
+            >
               <span>yashchaudhari500@gmail.com</span>
-              <span className="copy-icon" aria-hidden="true">{copied ? "✓" : "⎘"}</span>
+              <span className="copy-badge" aria-hidden="true">
+                {copied ? "Copied! ✓" : "Copy ⎘"}
+              </span>
             </button>
+            <span className="sr-only" aria-live="polite">
+              {copied ? "Email address yashchaudhari500@gmail.com copied to clipboard." : ""}
+            </span>
           </div>
         </div>
         {/* F2 — LinkedIn listed first (most relevant to recruiters) */}
@@ -594,32 +725,68 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer>
         <span>YASH CHAUDHARI · USER RESEARCH PARTICIPANT</span>
-        {/* F12 — back-to-top link */}
+        {/* F12 — back-to-top button with ample touch target */}
         <a href="#top" className="back-to-top" aria-label="Back to top of page">Back to top ↑</a>
         <span>Evidence-led personal portfolio · 2026</span>
       </footer>
 
-      {/* ── Evidence modal ─────────────────────────────────────── */}
+      {/* ── Evidence modal dialog (WAI-ARIA Dialog Pattern) ───── */}
       {selected && (
         <div
           className="modal-backdrop"
-          onClick={() => setSelected(null)}
+          onClick={closeModal}
           role="dialog"
           aria-modal="true"
-          aria-label={`Evidence: ${selected.title}`}
+          aria-labelledby="modal-title"
         >
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <button
-              className="modal-close"
-              onClick={() => setSelected(null)}
-              aria-label="Close evidence modal"
-            >
-              ×
-            </button>
+          <div
+            className="modal"
+            ref={modalRef}
+            onKeyDown={handleModalKeyDown}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div className="modal-count">
+                <span>{selected.platform}</span>
+                <span className="modal-count-sep" aria-hidden="true">·</span>
+                <span>{currentIndex + 1} of {visible.length}</span>
+              </div>
+              <div className="modal-nav-actions">
+                <button
+                  type="button"
+                  className="modal-nav-btn"
+                  onClick={handlePrevEvidence}
+                  aria-label="View previous evidence card (Left arrow key)"
+                  title="Previous evidence (←)"
+                >
+                  ← Prev
+                </button>
+                <button
+                  type="button"
+                  className="modal-nav-btn"
+                  onClick={handleNextEvidence}
+                  aria-label="View next evidence card (Right arrow key)"
+                  title="Next evidence (→)"
+                >
+                  Next →
+                </button>
+                <button
+                  ref={closeBtnRef}
+                  type="button"
+                  className="modal-close"
+                  onClick={closeModal}
+                  aria-label="Close evidence modal (Escape key)"
+                  title="Close modal (Esc)"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
             <div className="modal-image">
               {/* F6 — descriptive alt text in modal too */}
               <img
@@ -632,21 +799,16 @@ export default function Home() {
             </div>
             <div className="modal-caption">
               <div className="meta"><span>{selected.platform}</span><span>{selected.year}</span></div>
-              <h3>{selected.title}</h3>
+              <h3 id="modal-title">{selected.title}</h3>
               <p>{selected.summary}</p>
-              {/* F5 — payment shown only here, not on the card */}
               {selected.payment && (
                 <div className="verified-line">✓ {selected.payment}</div>
               )}
-              <p className="modal-privacy-note">
-                Confidential details (names, emails, account balances) have been
-                cropped or blurred where present.
-              </p>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </>
   );
 }
 
