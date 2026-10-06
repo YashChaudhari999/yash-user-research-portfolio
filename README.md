@@ -25,7 +25,7 @@ The site includes supplied screenshots from:
 It also names the additional platforms supplied by the user:
 - UserTesting
 - BetaTesting
-- Testwork
+- Testerwork
 
 No academic background is included.
 
