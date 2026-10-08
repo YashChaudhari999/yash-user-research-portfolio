@@ -412,7 +412,7 @@ export default function Home() {
             {/* F1 — date range matches the timeline (2024 → 2026) */}
             <span>Since 2024</span>
           </div>
-          <h1>Yash<br /><em>Chaudhari.</em></h1>
+          <h1>Yash<br />Chaudhari</h1>
           {/* F11 — role tagline is not a section title; use <p> not <h2> */}
           <p className="hero-role">
             User Research Participant <span aria-hidden="true">·</span> UX Research Enthusiast
@@ -445,7 +445,7 @@ export default function Home() {
               {/* F3 — relabelled from "VERIFIED EVIDENCE" */}
               <span className="evidence-badge">PLATFORM SCREENSHOTS</span>
             </div>
-            <div className="profile-name">Yash<br /><em>Chaudhari</em></div>
+            <div className="profile-name">Yash<br />Chaudhari</div>
             <div className="profile-caption">Curious user. Detailed observer. Consistent participant.</div>
             <div className="profile-stat">
               <div><strong>Since</strong><span>2024</span></div>
